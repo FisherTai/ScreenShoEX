@@ -4,6 +4,8 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Service;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -21,6 +23,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -34,6 +37,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -48,6 +53,7 @@ import java.util.Date;
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class FloatWindowsService extends Service {
   private static final String TAG = "FloatWindowsService";
+  private SaveTask mSaveTask;
 
   private static FloatWindowsService floatWindowsService;
 
@@ -285,20 +291,24 @@ public class FloatWindowsService extends Service {
     if (image == null) {
       startScreenShot();
     } else {
-      SaveTask mSaveTask = new SaveTask();
+      SaveTask mSaveTask = new SaveTask(this);
       mSaveTask.execute(image);
-//      AsyncTaskCompat.executeParallel(mSaveTask, image);  在新API中已經移除這個類別
     }
   }
 
 
   public class SaveTask extends AsyncTask<Image, Void, Bitmap> {
 
+    private WeakReference<Service> mWeakReference ;
+
+    public SaveTask(Service mService){
+      mWeakReference = new WeakReference<>(mService);
+    }
+
     @Override
     protected Bitmap doInBackground(Image... params) {
 
       if (params == null || params.length < 1 || params[0] == null) {
-
         return null;
       }
 
@@ -317,35 +327,76 @@ public class FloatWindowsService extends Service {
       bitmap.copyPixelsFromBuffer(buffer);
       bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height);
       image.close();
+      //到這邊已經取得了Bitmap
+
       File fileImage = null;
       if (bitmap != null) {
-
-//        fileImage = saveShopImage(FloatWindowsService.this,bitmap);
-
-        try {
-          fileImage = new File(FileUtil.getScreenShotsName(getApplicationContext()));
-          Log.d(TAG, "doInBackground: "+fileImage);
-          if (!fileImage.exists()) {
-            fileImage.createNewFile();
-          }
-          FileOutputStream out = new FileOutputStream(fileImage);
-          if (out != null) {
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-            out.flush();
-            out.close();
-            Intent media = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-            Uri contentUri = Uri.fromFile(fileImage);
-            media.setData(contentUri);
-            sendBroadcast(media);
-          }
-        } catch (FileNotFoundException e) {
-          e.printStackTrace();
-          fileImage = null;
-        } catch (IOException e) {
-          e.printStackTrace();
-          fileImage = null;
-        }
+        //普通的儲存方式，但相簿不會即時刷新圖片
+//        fileImage = FileUtil.saveImage(FloatWindowsService.this,bitmap);
+        //儲存方式，搭配Broadcast通知相簿刷新圖片(API29以後不建議使用)
+//        fileImage = FileUtil.saveImageMatchBroadcast(FloatWindowsService.this,bitmap);
+        //使用MediaStore，透過ContentResolver儲存圖片(官方推薦的作法)
+        fileImage = FileUtil.saveImageMatchMediaStore(FloatWindowsService.this,bitmap);
+//        try {
+//          fileImage = new File(FileUtil.getScreenShotsName(getApplicationContext()));
+//          if (!fileImage.exists()) {
+//            fileImage.createNewFile();
+//          }
+//          FileOutputStream out = new FileOutputStream(fileImage);
+//          if (out != null) {
+//            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+//            out.flush();
+//            out.close();
+//            Intent media = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+//            Uri contentUri = Uri.fromFile(fileImage);
+//            media.setData(contentUri);
+//            sendBroadcast(media);
+//          }
+//        } catch (FileNotFoundException e) {
+//          e.printStackTrace();
+//          fileImage = null;
+//        } catch (IOException e) {
+//          e.printStackTrace();
+//          fileImage = null;
+//        }
       }
+
+
+      /*-------------------------------------------------------------------*/
+//      ContentValues values = new ContentValues();
+//      values.put(MediaStore.Images.Media.DESCRIPTION, "This is an image");
+//      values.put(MediaStore.Images.Media.DISPLAY_NAME, "Image.png");
+//      values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+//      values.put(MediaStore.Images.Media.TITLE, "Image.png");
+//      values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/test");
+//
+//      Uri external = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+//      ContentResolver resolver = getApplicationContext().getContentResolver();
+//
+//      Uri insertUri = resolver.insert(external, values);
+//      Log.d(TAG, "doInBackground: Test "+insertUri);
+//
+//      OutputStream os = null;
+//      try {
+//        if (insertUri != null) {
+//          os = resolver.openOutputStream(insertUri);
+//        }
+//        if (os != null) {
+//          bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
+//        }
+//      } catch (IOException e) {
+//        Log.e(TAG, "doInBackground: "+e.toString());
+//      } finally {
+//        try {
+//          if (os != null) {
+//            os.close();
+//          }
+//        } catch (IOException e) {
+//          Log.e("fail in close: " , e.toString());
+//        }
+//      }
+
+      /*------------------------------------------------------------------------------*/
 
       if (fileImage != null) {
         return bitmap;
@@ -356,42 +407,20 @@ public class FloatWindowsService extends Service {
     @Override
     protected void onPostExecute(Bitmap bitmap) {
       super.onPostExecute(bitmap);
-      //预览图片
+      Service mService = mWeakReference.get();
+      if (isCancelled() || mService == null) {
+        return;
+      }
+      //預覽圖判
       if (bitmap != null) {
-
         ((ScreenCaptureApplication) getApplication()).setmScreenCaptureBitmap(bitmap);
-        Log.d(TAG, "onPostExecute: 获取图片成功");
+        Log.d(TAG, "onPostExecute: 獲取圖片成功");
         startActivity(PreviewPictureActivity.newIntent(getApplicationContext()));
       }
-
       mFloatView.setVisibility(View.VISIBLE);
-
     }
 
-    private File saveShopImage(Service mService , Bitmap bmp) {
-      //檔名設置
-      SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd");
-      NumberFormat nf = new DecimalFormat("000");
-      int count = 1;
-      String finename = "Screen_" + sdf.format(new Date());
-      // 圖片檔案路徑
-      File file = new File(mService.getExternalFilesDir("SCREEN"), finename + "_001.png");
-      while ((file.exists())) {
-        file = new File(mService.getExternalFilesDir("SCREEN"), finename + "_" + nf.format(count) + ".png");
-        count++;
-      }
-      try {
-        FileOutputStream os = new FileOutputStream(file);
-        bmp.compress(Bitmap.CompressFormat.PNG, 100, os);
-        os.flush();
-        os.close();
-        Log.d("MainActivity", "screenshot: 创建:" + file);
-      } catch (Exception e) {
-        Log.e("MainActivity", "screenshot: " + e.toString());
-      }
 
-      return file;
-    }
 
   }
 
