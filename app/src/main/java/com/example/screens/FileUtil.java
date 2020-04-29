@@ -25,14 +25,32 @@ import java.util.Date;
  * Created by ryze on 2016-5-26.
  */
 public class FileUtil {
+    private static FileUtil mFileUtil;
+    private FileUtil(){
+
+    }
+    public static FileUtil getInstance(){
+        if (mFileUtil==null){
+            mFileUtil = new FileUtil();
+        }
+        return mFileUtil;
+    }
+
+    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
+    private String date = simpleDateFormat.format(new Date());
 
     //系统保存截图的路径
-    public static final String SCREENCAPTURE_PATH = "ScreenCapture" + File.separator + "Screenshots" + File.separator;
-//  public static final String SCREENCAPTURE_PATH = "ZAKER" + File.separator + "Screenshots" + File.separator;
+    private  final String SCREENCAPTURE_PATH = "ScreenCapture" + File.separator + "Screenshots" + File.separator;
+    private  final String PATH = "Pictures" + File.separator + "ScreenCapture" + File.separator;
+    private  final String SCREENSHOT_NAME = "Screenshot";
+    private String ImageName =
+            new StringBuffer()
+                    .append(SCREENSHOT_NAME)
+                    .append("_")
+                    .append(date)
+                    .append(".png").toString();
 
-    public static final String SCREENSHOT_NAME = "Screenshot";
-
-    public static String getAppPath(Context context) {
+    private String getAppPath(Context context) {
 
         if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
 
@@ -47,12 +65,12 @@ public class FileUtil {
     }
 
 
-    public static String getScreenShots(Context context) {
+    private String getScreenShots(Context context) {
 
         StringBuffer stringBuffer = new StringBuffer(getAppPath(context));
         stringBuffer.append(File.separator);
 
-        stringBuffer.append(SCREENCAPTURE_PATH);
+        stringBuffer.append(PATH);
 
         File file = new File(stringBuffer.toString());
 
@@ -64,10 +82,9 @@ public class FileUtil {
 
     }
 
-    public static String getScreenShotsName(Context context) {
+    private String getScreenShotsName(Context context) {
 
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
-
         String date = simpleDateFormat.format(new Date());
 
         StringBuffer stringBuffer = new StringBuffer(getScreenShots(context));
@@ -81,34 +98,38 @@ public class FileUtil {
     }
 
 
-    public static File saveImage(Service mService, Bitmap bmp) {
+    public File saveImage(Service mService, Bitmap bmp) {
         //檔名設置
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd");
-        NumberFormat nf = new DecimalFormat("000");
-        int count = 1;
-        String finename = "Screen_" + sdf.format(new Date());
-        // 圖片檔案路徑
-        File file = new File(mService.getExternalFilesDir("SCREEN"), finename + "_001.png");
-        while ((file.exists())) {
-            file = new File(mService.getExternalFilesDir("SCREEN"), finename + "_" + nf.format(count) + ".png");
-            count++;
-        }
+//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd");
+//        NumberFormat nf = new DecimalFormat("000");
+//        int count = 1;
+//        String finename = "Screen_" + sdf.format(new Date());
+//        // 圖片檔案路徑
+//        File file = new File(mService.getExternalFilesDir("SCREEN"), finename + "_001.png");
+//        while ((file.exists())) {
+//            file = new File(mService.getExternalFilesDir("SCREEN"), finename + "_" + nf.format(count) + ".png");
+//            count++;
+//        }
+        File file = null;
         try {
+            file = new File(getScreenShotsName(mService));
+            if (!file.exists()) {
+                file.createNewFile();
+            }
             FileOutputStream os = new FileOutputStream(file);
             bmp.compress(Bitmap.CompressFormat.PNG, 100, os);
             os.flush();
             os.close();
-            Log.d("saveShopImage", "screenshot: 创建:" + file);
         } catch (Exception e) {
             Log.e("saveShopImage", "screenshot: " + e.toString());
         }
         return file;
     }
 
-    public static File saveImageMatchBroadcast(Service mService, Bitmap bmp) {
+    public File saveImageMatchBroadcast(Service mService, Bitmap bmp) {
         File fileImage = null;
         try {
-            fileImage = new File(FileUtil.getScreenShotsName(mService));
+            fileImage = new File(getScreenShotsName(mService));
             if (!fileImage.exists()) {
                 fileImage.createNewFile();
             }
@@ -130,18 +151,21 @@ public class FileUtil {
         return fileImage;
     }
 
-    public static File saveImageMatchMediaStore(Service mService, Bitmap bmp) {
+    public File saveImageMatchMediaStore(Service mService, Bitmap bmp) {
+
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.DESCRIPTION, "This is an image");
-        values.put(MediaStore.Images.Media.DISPLAY_NAME, "Image.png");
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, ImageName);
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
         values.put(MediaStore.Images.Media.TITLE, "Image.png");
-        values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/test");
+        values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/ScreenCapture");
         Uri external = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         ContentResolver resolver = mService.getContentResolver();
-
         Uri insertUri = resolver.insert(external, values);
-        Log.d("saveImageMatchMediaStore", "doInBackground: Test " + insertUri);
+
+        Log.d("saveImageMatchMediaStore", "URI: " + "/storage/emulated/0/Pictures/ScreenCapture/"+ImageName);
+        Log.d("saveImageMatchMediaStore", "URI: " + external);
+        Log.d("saveImageMatchMediaStore", "URI: " + insertUri);
 
         OutputStream os = null;
         try {
@@ -149,7 +173,7 @@ public class FileUtil {
                 os = resolver.openOutputStream(insertUri);
             }
             if (os != null) {
-              bmp.compress(Bitmap.CompressFormat.PNG, 100, os);
+                bmp.compress(Bitmap.CompressFormat.PNG, 100, os);
             }
         } catch (IOException e) {
             Log.e("saveImageMatchMediaStore", "doInBackground: " + e.toString());
