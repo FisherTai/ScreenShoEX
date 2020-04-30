@@ -37,19 +37,22 @@ public class FileUtil {
     }
 
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
-    private String date = simpleDateFormat.format(new Date());
 
     //系统保存截图的路径
     private  final String SCREENCAPTURE_PATH = "ScreenCapture" + File.separator + "Screenshots" + File.separator;
     private  final String PATH = "Pictures" + File.separator + "ScreenCapture" + File.separator;
     private  final String SCREENSHOT_NAME = "Screenshot";
-    private String ImageName =
-            new StringBuffer()
-                    .append(SCREENSHOT_NAME)
-                    .append("_")
-                    .append(date)
-                    .append(".png").toString();
 
+    private String getImageName() {
+        String date = simpleDateFormat.format(new Date());
+        String imageName =
+                new StringBuffer()
+                        .append(SCREENSHOT_NAME)
+                        .append("_")
+                        .append(date)
+                        .append(".png").toString();
+         return imageName;
+    }
     private String getAppPath(Context context) {
 
         if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
@@ -155,7 +158,7 @@ public class FileUtil {
 
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.DESCRIPTION, "This is an image");
-        values.put(MediaStore.Images.Media.DISPLAY_NAME, ImageName);
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, getImageName());
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
         values.put(MediaStore.Images.Media.TITLE, "Image.png");
         values.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/ScreenCapture");
@@ -163,8 +166,6 @@ public class FileUtil {
         ContentResolver resolver = mService.getContentResolver();
         Uri insertUri = resolver.insert(external, values);
 
-        Log.d("saveImageMatchMediaStore", "URI: " + "/storage/emulated/0/Pictures/ScreenCapture/"+ImageName);
-        Log.d("saveImageMatchMediaStore", "URI: " + external);
         Log.d("saveImageMatchMediaStore", "URI: " + insertUri);
 
         OutputStream os = null;

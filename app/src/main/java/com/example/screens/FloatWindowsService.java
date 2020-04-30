@@ -312,9 +312,9 @@ public class FloatWindowsService extends Service {
             File fileImage = null;
             if (bitmap != null) {
                 //普通的儲存方式，但相簿不會即時刷新圖片
-                fileImage = FileUtil.getInstance().saveImage(FloatWindowsService.this, bitmap);
+//                fileImage = FileUtil.getInstance().saveImage(FloatWindowsService.this, bitmap);
                 //儲存方式，搭配Broadcast通知相簿刷新圖片(API29以後不建議使用)
-                fileImage = FileUtil.getInstance().saveImageMatchBroadcast(FloatWindowsService.this, bitmap);
+//                fileImage = FileUtil.getInstance().saveImageMatchBroadcast(FloatWindowsService.this, bitmap);
                 //使用MediaStore，透過ContentResolver儲存圖片(官方推薦的作法)
                 fileImage = FileUtil.getInstance().saveImageMatchMediaStore(FloatWindowsService.this, bitmap);
             }
