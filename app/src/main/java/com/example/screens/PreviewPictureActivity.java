@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -12,7 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
 
 /**
- *
+ * 別人製作的預覽圖片類別
  */
 public class PreviewPictureActivity extends FragmentActivity implements GlobalScreenshot.onScreenShotListener {
 
@@ -36,8 +35,6 @@ public class PreviewPictureActivity extends FragmentActivity implements GlobalSc
 
     Bitmap bitmap = ((ScreenCaptureApplication) getApplication()).getmScreenCaptureBitmap();
 
-
-    Log.e("ryze", "预览图片");
     mPreviewImageView.setImageBitmap(bitmap);
     mPreviewImageView.setVisibility(View.GONE);
 
