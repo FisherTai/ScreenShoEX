@@ -37,20 +37,19 @@ public class MainActivity extends FragmentActivity {
         });
     }
 
+
     public void requestPermission() {
 
-        int permission = ActivityCompat.checkSelfPermission(this,
+        int permission = ActivityCompat.checkSelfPermission(MainActivity.this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE);
+        }
 
         if (!Settings.canDrawOverlays(this)) {
             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
             startActivityForResult(intent, ACTION_MANAGE_OVERLAY_PERMISSION);
-        }
-
-        //需向使用者請求文件存儲權限
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_STORAGE);
         }
 
         MediaProjectionManager mediaProjectionManager = (MediaProjectionManager)
@@ -80,5 +79,6 @@ public class MainActivity extends FragmentActivity {
         }
 
     }
+
 
 }

@@ -16,7 +16,6 @@ import android.media.ImageReader;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.DisplayMetrics;
@@ -41,7 +40,7 @@ import java.nio.ByteBuffer;
 public class FloatWindowsService extends Service {
     private static final String TAG = "FloatWindowsService";
     private SaveTask mSaveTask;
-
+    private Intent mintent;
     private static FloatWindowsService floatWindowsService;
 
     public static FloatWindowsService getInstance() {
@@ -79,6 +78,7 @@ public class FloatWindowsService extends Service {
 
     @Override
     public void onCreate() {
+        mintent= new Intent(getApplicationContext(), FloatWindowsService.class);
         super.onCreate();
         Log.d(TAG, "onCreate: ");
         createFloatView();
@@ -119,8 +119,14 @@ public class FloatWindowsService extends Service {
         mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
                 | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         mLayoutParams.gravity = Gravity.LEFT | Gravity.TOP;
-        mLayoutParams.x = mScreenWidth;
-        mLayoutParams.y = 100;
+        //這裡設置位置，因
+        if (FloatWindowValue.LastWindowX== 0 && FloatWindowValue.LastWindowY == 0){
+            mLayoutParams.x = mScreenWidth;
+            mLayoutParams.y = 100;
+        }else{
+            mLayoutParams.x = FloatWindowValue.LastWindowX;
+            mLayoutParams.y = FloatWindowValue.LastWindowY;
+        }
         mLayoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
         mLayoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
 
@@ -170,9 +176,9 @@ public class FloatWindowsService extends Service {
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
             int dx = (int) e2.getRawX() - lastX;
             int dy = (int) e2.getRawY() - lastY;
-            mLayoutParams.x = paramX + dx;
-            mLayoutParams.y = paramY + dy;
-            // 更新悬浮窗位置
+            FloatWindowValue.LastWindowX = mLayoutParams.x = paramX + dx;
+            FloatWindowValue.LastWindowY = mLayoutParams.y = paramY + dy;
+            // 更新位置
             mWindowManager.updateViewLayout(mFloatView, mLayoutParams);
             return true;
         }
@@ -185,8 +191,7 @@ public class FloatWindowsService extends Service {
                     builder.setMessage("是否關閉彈窗?")
                             .setPositiveButton("關閉彈窗", new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int id) {
-                                    Intent intent = new Intent(getApplicationContext(), FloatWindowsService.class);
-                                    stopService(intent);
+                                    stopService(mintent);
                                 }
                             })
                             .setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -209,6 +214,7 @@ public class FloatWindowsService extends Service {
 
     private void startScreenShot() {
         Log.d(TAG, "startScreenShot: ");
+        //截圖時隱藏按鈕
         mFloatView.setVisibility(View.GONE);
 
         Handler handler1 = new Handler();
@@ -231,11 +237,15 @@ public class FloatWindowsService extends Service {
     private void createImageReader() {
         Log.d(TAG, "createImageReader: ");
         mImageReader = ImageReader.newInstance(mScreenWidth, mScreenHeight, PixelFormat.RGBA_8888, 1);
-
+        // 1.前兩個參數用來指定生成圖像的寬和高。
+        // 2.第三個參數format是圖像的格式，
+        //   必須是ImageFormat或PixelFormat中的一種，這裡使用PixelFormat.RGBA_8888(並非所有格式ImageReader都支援，例如ImageFormat.NV21)。
+        // 3.第四個參數是maxImages，這個參數是你想同時在ImageReader裡獲取到的Image對象的個數，ImageReader是一個類似數組的東西，
+        //   然後我們可以通過acquireLatestImage()或acquireNextImage()方法來得到裡面的Image對象。
+        //   這個值應該設置的越小越好，但是得大於0。
     }
 
     public void startVirtual() {
-        Log.d(TAG, "startVirtual: ");
         if (mMediaProjection != null) {
             virtualDisplay();
         } else {
@@ -247,7 +257,7 @@ public class FloatWindowsService extends Service {
     public void setUpMediaProjection() {
         Log.d(TAG, "setUpMediaProjection: ");
         if (mResultData == null) {
-            Intent intent = new Intent(Intent.ACTION_MAIN);
+            Intent intent = new Intent(this,MainActivity.class);
             intent.addCategory(Intent.CATEGORY_LAUNCHER);
             startActivity(intent);
         } else {
@@ -316,7 +326,7 @@ public class FloatWindowsService extends Service {
                 //儲存方式，搭配Broadcast通知相簿刷新圖片(API29以後不建議使用)
 //                fileImage = FileUtil.getInstance().saveImageMatchBroadcast(FloatWindowsService.this, bitmap);
                 //使用MediaStore，透過ContentResolver儲存圖片(官方推薦的作法)
-                fileImage = FileUtil.getInstance().saveImageMatchMediaStore(FloatWindowsService.this, bitmap);
+                fileImage = Util.getInstance().saveImageMatchMediaStore(FloatWindowsService.this, bitmap);
             }
             if (fileImage != null) {
                 return bitmap;
@@ -337,7 +347,14 @@ public class FloatWindowsService extends Service {
                 Log.d(TAG, "onPostExecute: 獲取圖片成功");
                 startActivity(PreviewPictureActivity.newIntent(getApplicationContext()));
             }
-            mFloatView.setVisibility(View.VISIBLE);
+            //結束時再顯示按鈕
+//             mFloatView.setVisibility(View.VISIBLE);
+
+            //原本的做法，截圖後Service因不明原因持續占用記憶體，下策是每次截圖後將Service整個重啟
+//            mWindowManager.removeView(mFloatView);
+//            mWindowManager.addView(mFloatView, mLayoutParams);
+            stopService(mintent);
+            startService(mintent);
         }
     }
 

@@ -16,32 +16,28 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-/**
- * Created by ryze on 2016-5-26.
- */
-public class FileUtil {
-    private static FileUtil mFileUtil;
-    private FileUtil(){
 
-    }
-    public static FileUtil getInstance(){
-        if (mFileUtil==null){
-            mFileUtil = new FileUtil();
+public class Util {
+    private static Util mUtil;
+
+    private Util() {}
+
+    public static Util getInstance() {
+        if (mUtil == null) {
+            mUtil = new Util();
         }
-        return mFileUtil;
+        return mUtil;
     }
 
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd-hh-mm-ss");
 
     //系统保存截图的路径
-    private  final String SCREENCAPTURE_PATH = "ScreenCapture" + File.separator + "Screenshots" + File.separator;
-    private  final String PATH = "Pictures" + File.separator + "ScreenCapture" + File.separator;
-    private  final String SCREENSHOT_NAME = "Screenshot";
+    private final String SCREENCAPTURE_PATH = "ScreenCapture" + File.separator + "Screenshots" + File.separator;
+    private final String PATH = "Pictures" + File.separator + "ScreenCapture" + File.separator;
+    private final String SCREENSHOT_NAME = "Screenshot";
 
     private String getImageName() {
         String date = simpleDateFormat.format(new Date());
@@ -51,8 +47,9 @@ public class FileUtil {
                         .append("_")
                         .append(date)
                         .append(".png").toString();
-         return imageName;
+        return imageName;
     }
+
     private String getAppPath(Context context) {
 
         if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
@@ -66,7 +63,6 @@ public class FileUtil {
         }
 
     }
-
 
     private String getScreenShots(Context context) {
 
@@ -99,7 +95,6 @@ public class FileUtil {
         return stringBuffer.toString();
 
     }
-
 
     public File saveImage(Service mService, Bitmap bmp) {
         //檔名設置
@@ -189,6 +184,7 @@ public class FileUtil {
         }
         return null;
     }
+
 
 
 }
