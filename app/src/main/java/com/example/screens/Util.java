@@ -182,7 +182,7 @@ public class Util {
                 Log.e("fail in close: ", e.toString());
             }
         }
-        return null;
+        return new File(getScreenShotsName(mService));
     }
 
 

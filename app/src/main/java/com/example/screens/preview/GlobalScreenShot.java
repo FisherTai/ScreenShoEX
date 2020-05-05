@@ -1,4 +1,4 @@
-package com.example.screens;
+package com.example.screens.preview;
 
 /*
  * Copyright (C) 2011 The Android Open Source Project
@@ -37,6 +37,8 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.Interpolator;
 import android.widget.ImageView;
+
+import com.example.screens.R;
 
 /**
  * POD used in the AsyncTask which saves an image in the background.

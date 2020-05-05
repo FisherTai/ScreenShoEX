@@ -56,11 +56,10 @@ public class FloatWindowsService extends Service {
 
     private MediaProjection mMediaProjection;
     private VirtualDisplay mVirtualDisplay;
+    private ImageReader mImageReader;
 
     private static Intent mResultData = null;
 
-
-    private ImageReader mImageReader;
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams mLayoutParams;
     private GestureDetector mGestureDetector;
@@ -224,7 +223,7 @@ public class FloatWindowsService extends Service {
         if (mMediaProjection != null) {
             virtualDisplay();
         } else {
-            setUpMediaProjection(); //设定MediaProjectionManager
+            setUpMediaProjection(); //设定MediaProjection
             virtualDisplay();
         }
     }
@@ -315,29 +314,33 @@ public class FloatWindowsService extends Service {
             //預覽圖片
             if (bitmap != null) {
                 /*********************************************************/
-            ImageView lookImage = new ImageView(getApplicationContext());
-            lookImage.setImageBitmap(bitmap);
-            AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
-            AlertDialog alertDialog =
-                    builder.setPositiveButton("關閉", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int id) {
-                                }
-                            })
-                            .setTitle("預覽")
-                            .setIcon(R.mipmap.ic_imagetool_cancel)
-                            .setView(lookImage)
-                            .create();
-            alertDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
-            alertDialog.show();
+                ImageView lookImage = new ImageView(getApplicationContext());
+                lookImage.setImageBitmap(bitmap);
+                AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
+                AlertDialog alertDialog =
+                        builder.setPositiveButton("關閉", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                            }
+                        })
+                                .setTitle("預覽")
+                                .setIcon(R.mipmap.ic_imagetool_look)
+                                .setView(lookImage)
+                                .create();
+                alertDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
+                alertDialog.show();
                 /*********************************************************/
+                //其他人製作的預覽圖片方式
 //                ((ScreenCaptureApplication) getApplication()).setmScreenCaptureBitmap(bitmap);
-                Log.d(TAG, "onPostExecute: 獲取圖片成功");
 //                startActivity(PreviewPictureActivity.newIntent(getApplicationContext()));
+                Log.d(TAG, "onPostExecute: 獲取圖片成功");
             }
             //結束時再顯示按鈕
+            stopService(mintent);
+            startService(mintent);
             mFloatView.setVisibility(View.VISIBLE);
-            mMediaProjection.stop();
-            mMediaProjection = null;
+            //如果手動停止MediaProjection，下一次不會得到新的bitmap。
+//            mMediaProjection.stop();
+//            mMediaProjection = null;
         }
     }
 

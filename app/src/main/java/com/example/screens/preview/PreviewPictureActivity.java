@@ -1,4 +1,4 @@
-package com.example.screens;
+package com.example.screens.preview;
 
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +9,8 @@ import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
+
+import com.example.screens.R;
 
 /**
  * 別人製作的預覽圖片類別

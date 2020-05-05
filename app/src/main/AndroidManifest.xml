@@ -9,7 +9,7 @@
     <uses-permission android:name = "android.permission.WRITE_CONTACTS"/>
 
     <application
-        android:name=".ScreenCaptureApplication"
+        android:name=".preview.ScreenCaptureApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -27,7 +27,7 @@
             android:name=".FloatWindowsService" android:exported="false"/>
 
         <activity
-            android:name=".PreviewPictureActivity"
+            android:name=".preview.PreviewPictureActivity"
             android:windowSoftInputMode="stateUnspecified|adjustPan">
 
         </activity>
