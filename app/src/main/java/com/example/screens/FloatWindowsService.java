@@ -329,9 +329,6 @@ public class FloatWindowsService extends Service {
                 alertDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
                 alertDialog.show();
                 /*********************************************************/
-                //其他人製作的預覽圖片方式
-//                ((ScreenCaptureApplication) getApplication()).setmScreenCaptureBitmap(bitmap);
-//                startActivity(PreviewPictureActivity.newIntent(getApplicationContext()));
                 Log.d(TAG, "onPostExecute: 獲取圖片成功");
             }
             //結束時再顯示按鈕
